@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+<!--  版权文字颜色  -->
+    <color name="light_gray">#aaaaaa</color>
+    <color name="col_width">#ffffff</color>
+    <color name="main_red">#dd0000</color>
+    <color name="transparent">#00000000</color>
+
+</resources>
