@@ -1,29 +1,15 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'
-    }
+plugins {
+    id 'com.android.application' version '8.13.0' apply false
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url "https://jitpack.io" }
-    }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }
 
 ext{
-    minSdkSersion = 19
-    compileSdkVersion = 34
-    targetSdkVersion = 34
+    minSdkSersion = 23
+    compileSdkVersion = 36
+    targetSdkVersion = 36
     versionCode = 1
     versionName = "1.0"
 }

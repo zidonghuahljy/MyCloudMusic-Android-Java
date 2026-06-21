@@ -245,4 +245,31 @@ public class StringUtil {
 
         return String.valueOf(data);
     }
+
+    /**
+     * 截断字符串，超过 maxLength 时添加省略号
+     *
+     * @param value     原始字符串
+     * @param maxLength 最大长度（不含省略号）
+     * @return 截断后的字符串
+     */
+    public static String truncate(String value, int maxLength) {
+        if (value == null) return "";
+        if (maxLength <= 0) return "...";
+        if (value.length() <= maxLength) return value;
+        return value.substring(0, maxLength) + "...";
+    }
+
+    /**
+     * 将秒数格式化为 mm:ss 字符串，用于音乐播放时间显示
+     *
+     * @param seconds 总秒数（非负）
+     * @return 格式化时间，如 "03:45"
+     */
+    public static String formatDuration(int seconds) {
+        if (seconds < 0) seconds = 0;
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
+    }
 }

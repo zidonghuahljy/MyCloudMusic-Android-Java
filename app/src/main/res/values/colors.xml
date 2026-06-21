@@ -8,5 +8,15 @@
     <color name="col_width">#ffffff</color>
     <color name="main_red">#dd0000</color>
     <color name="transparent">#00000000</color>
+    <color name="home_background">#F6F7F9</color>
+    <color name="home_border">#ECEEF2</color>
+    <color name="home_text_primary">#202124</color>
+    <color name="home_text_secondary">#7A808A</color>
+    <color name="home_card_text_light">#F6DCDC</color>
+    <color name="home_surface">#FFFFFF</color>
+    <color name="music_blue">#3D73DD</color>
+    <color name="music_green">#2E8B70</color>
+    <color name="music_dark">#252B35</color>
+    <color name="music_yellow">#F2B441</color>
 
 </resources>

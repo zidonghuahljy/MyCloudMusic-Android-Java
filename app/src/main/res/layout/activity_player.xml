@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_background"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="正在播放"
+        android:textColor="@color/home_text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="42dp"
+        android:background="@drawable/shape_page_dark_circle"
+        android:gravity="center"
+        android:text="晴天"
+        android:textColor="@android:color/white"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="34dp"
+        android:text="晴天"
+        android:textColor="@color/home_text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="周杰伦 - 叶惠美"
+        android:textColor="@color/home_text_secondary"
+        android:textSize="14sp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="36dp"
+        android:background="@drawable/shape_progress_track">
+
+        <View
+            android:layout_width="126dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/shape_progress_fill" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="01:18"
+            android:textColor="@color/home_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="03:29"
+            android:textColor="@color/home_text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="74dp"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="上一首"
+            android:textColor="@color/home_text_primary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="88dp"
+            android:layout_height="54dp"
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="18dp"
+            android:background="@drawable/shape_home_album"
+            android:gravity="center"
+            android:text="暂停"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="74dp"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="下一首"
+            android:textColor="@color/home_text_primary"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>
