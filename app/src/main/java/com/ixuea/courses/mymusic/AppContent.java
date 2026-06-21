@@ -32,10 +32,11 @@ public class AppContent extends MultiDexApplication {
 
         // 仅 debug 构建开启覆盖率收集
         if (BuildConfig.DEBUG) {
+            // 10.0.2.2 是 Android 模拟器访问宿主机 localhost 的特殊地址
             CoverageCollector.init(
                     this,
-                    "http://10.12.0.23:3001",
-                    "6a2f8be78e7604cc8a1ee191"   // Build ID
+                    "http://10.0.2.2:3001",
+                    "6a380a9d44a99028cae34db0"   // Build ID（与平台上创建的 Build 对应）
             );
         }
 
