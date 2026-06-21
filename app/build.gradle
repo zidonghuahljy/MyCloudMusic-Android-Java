@@ -91,6 +91,35 @@ task jacocoUnitTestReport(type: JacocoReport, dependsOn: ['testDevDebugUnitTest'
     ]))
 }
 
+// UI 测试（connected/instrumented）覆盖率报告
+// 运行: ./gradlew jacocoUITestReport
+task jacocoUITestReport(type: JacocoReport) {
+    group = "Reporting"
+    description = "Generate JaCoCo UI/instrumented test coverage report"
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    def fileFilter = [
+        '**/R.class', '**/R$*.class', '**/BuildConfig.*',
+        '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*',
+        '**/coverage/**'
+    ]
+
+    classDirectories.setFrom(fileTree(
+        dir: "${buildDir}/intermediates/javac/devDebug/compileDevDebugJavaWithJavac/classes",
+        excludes: fileFilter
+    ))
+
+    sourceDirectories.setFrom(files(["src/main/java"]))
+
+    executionData.setFrom(fileTree(dir: buildDir, includes: [
+        'outputs/code_coverage/devDebugAndroidTest/connected/**/*.ec'
+    ]))
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.7.1'
