@@ -272,4 +272,14 @@ public class StringUtil {
         int secs = seconds % 60;
         return String.format("%02d:%02d", minutes, secs);
     }
+
+    public static String classify(int score) {
+        if (score >= 90) {
+            return "A";
+        }
+        if (score >= 70) {
+            return "B";
+        }
+        return "C";
+    }
 }
