@@ -36,7 +36,7 @@ public class AppContent extends MultiDexApplication {
             CoverageCollector.init(
                     this,
                     "http://10.0.2.2:3001",
-                    "6a380a9d44a99028cae34db0"   // Build ID（与平台上创建的 Build 对应）
+                    "6a390d5dd0f12e7a31a4c9a3"   // projectId（平台上创建项目后拿到的，长期不变）
             );
         }
 

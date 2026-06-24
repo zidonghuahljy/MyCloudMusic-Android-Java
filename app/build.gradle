@@ -20,8 +20,10 @@ android {
         flavorDimensions "versionCode"
 
         // 注入 Git 信息，供 CoverageCollector 使用（CI 环境变量优先，本地降级到 git 命令）
+        // ⚠️ 必须是完整 commit hash（不能用 --short），要跟 CI 调 POST /api/builds 时传的
+        // commitHash 完全一致，否则 SDK 端 GET /api/builds/resolve 查不到对应的 Build
         def gitHash = System.getenv("GIT_COMMIT_HASH") ?:
-            "git rev-parse --short HEAD".execute([], rootDir).text.trim()
+            "git rev-parse HEAD".execute([], rootDir).text.trim()
         def gitBranch = System.getenv("GIT_BRANCH") ?:
             "git rev-parse --abbrev-ref HEAD".execute([], rootDir).text.trim()
         buildConfigField "String", "GIT_COMMIT_HASH", "\"${gitHash}\""

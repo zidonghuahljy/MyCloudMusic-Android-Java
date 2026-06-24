@@ -46,16 +46,19 @@ public class CoverageCollector {
     /**
      * 初始化收集器。
      *
+     * commitHash 不需要手动传——直接读 BuildConfig.GIT_COMMIT_HASH（build.gradle 编译时用
+     * `git rev-parse HEAD` 注入），首次上传时用 (projectId, commitHash) 换 buildId。
+     *
      * @param application Application 实例
      * @param serverUrl   覆盖率平台地址，如 "http://192.168.1.100:3001"
      * @param projectId   平台上创建的项目 ID
      */
-    public static void init(Application application, String serverUrl, String buildId) {
+    public static void init(Application application, String serverUrl, String projectId) {
         if (!initialized.compareAndSet(false, true)) return;
 
         if (serverUrl != null && !serverUrl.isEmpty()
-                && buildId != null && !buildId.isEmpty()) {
-            uploader = new CoverageUploader(serverUrl, buildId);
+                && projectId != null && !projectId.isEmpty()) {
+            uploader = new CoverageUploader(serverUrl, projectId, com.ixuea.courses.mymusic.BuildConfig.GIT_COMMIT_HASH);
         }
 
         application.registerActivityLifecycleCallbacks(
