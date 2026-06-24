@@ -1,9 +1,81 @@
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
 
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+
 jacoco {
     toolVersion = "0.8.12"
 }
+
+def commandOutput = { File dir, List<String> command ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            workingDir dir
+            commandLine command
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
+            ignoreExitValue = true
+        }
+        return stdout.toString("UTF-8").trim()
+    } catch (Exception ignored) {
+        return ""
+    }
+}
+
+def sha256 = { String value ->
+    MessageDigest.getInstance("SHA-256")
+        .digest(value.getBytes("UTF-8"))
+        .collect { String.format("%02x", it) }
+        .join()
+}
+
+def sanitizeRepositoryUrl = { String value, String fallback ->
+    if (!value) {
+        return fallback
+    }
+    return value.replaceFirst(/^https:\/\/[^@]+@/, "https://")
+}
+
+def commonUtilsDir = rootProject.file("../mycloudmusic-common-utils")
+def shellCommitHash = System.getenv("GIT_COMMIT_HASH") ?:
+    commandOutput(rootDir, ["git", "rev-parse", "HEAD"])
+def shellBranch = System.getenv("GIT_BRANCH") ?:
+    commandOutput(rootDir, ["git", "rev-parse", "--abbrev-ref", "HEAD"])
+def commonUtilsCommitHash = commandOutput(commonUtilsDir, ["git", "rev-parse", "HEAD"])
+def commonUtilsBranch = commandOutput(commonUtilsDir, ["git", "rev-parse", "--abbrev-ref", "HEAD"])
+def shellRepositoryUrl = sanitizeRepositoryUrl(
+    commandOutput(rootDir, ["git", "config", "--get", "remote.origin.url"]),
+    "https://example.invalid/mycloudmusic-android-shell.git"
+)
+def commonUtilsRemote = sanitizeRepositoryUrl(
+    System.getenv("COMMON_UTILS_REPOSITORY_URL") ?: commandOutput(commonUtilsDir, ["git", "config", "--get", "remote.origin.url"]),
+    "https://example.invalid/mycloudmusic-common-utils.git"
+)
+
+def buildFingerprint = [
+    schemaVersion: 1,
+    platform: "android",
+    applicationId: "com.ixuea.courses.mymusic",
+    variant: "devDebug",
+    shell: [
+        module: "app",
+        repositoryUrl: shellRepositoryUrl,
+        commitHash: shellCommitHash,
+        branch: shellBranch
+    ],
+    components: [[
+        module: "common-utils",
+        mavenCoordinate: "com.mycloudmusic:common-utils:1.0.0",
+        repositoryUrl: commonUtilsRemote,
+        commitHash: commonUtilsCommitHash,
+        branch: commonUtilsBranch,
+        sourceRoots: ["src/main/java"]
+    ]]
+]
+def buildFingerprintJson = JsonOutput.toJson(buildFingerprint)
+def buildIdentityHash = sha256(buildFingerprintJson)
 
 android {
     namespace 'com.ixuea.courses.mymusic'
@@ -22,12 +94,10 @@ android {
         // 注入 Git 信息，供 CoverageCollector 使用（CI 环境变量优先，本地降级到 git 命令）
         // ⚠️ 必须是完整 commit hash（不能用 --short），要跟 CI 调 POST /api/builds 时传的
         // commitHash 完全一致，否则 SDK 端 GET /api/builds/resolve 查不到对应的 Build
-        def gitHash = System.getenv("GIT_COMMIT_HASH") ?:
-            "git rev-parse HEAD".execute([], rootDir).text.trim()
-        def gitBranch = System.getenv("GIT_BRANCH") ?:
-            "git rev-parse --abbrev-ref HEAD".execute([], rootDir).text.trim()
-        buildConfigField "String", "GIT_COMMIT_HASH", "\"${gitHash}\""
-        buildConfigField "String", "GIT_BRANCH", "\"${gitBranch}\""
+        buildConfigField "String", "GIT_COMMIT_HASH", "\"${shellCommitHash}\""
+        buildConfigField "String", "GIT_BRANCH", "\"${shellBranch}\""
+        buildConfigField "String", "BUILD_IDENTITY_HASH", "\"${buildIdentityHash}\""
+        buildConfigField "String", "BUILD_FINGERPRINT_JSON", JsonOutput.toJson(buildFingerprintJson)
     }
 
     buildTypes {
@@ -79,12 +149,21 @@ task jacocoUnitTestReport(type: JacocoReport, dependsOn: ['testDevDebugUnitTest'
         '**/coverage/**'
     ]
 
-    classDirectories.setFrom(fileTree(
-        dir: "${buildDir}/intermediates/javac/devDebug/compileDevDebugJavaWithJavac/classes",
-        excludes: fileFilter
-    ))
+    classDirectories.setFrom(files([
+        fileTree(
+            dir: "${buildDir}/intermediates/javac/devDebug/compileDevDebugJavaWithJavac/classes",
+            excludes: fileFilter
+        ),
+        fileTree(
+            dir: "${rootProject.projectDir}/../mycloudmusic-common-utils/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+            excludes: fileFilter
+        )
+    ]))
 
-    sourceDirectories.setFrom(files(["src/main/java"]))
+    sourceDirectories.setFrom(files([
+        "src/main/java",
+        "${rootProject.projectDir}/../mycloudmusic-common-utils/src/main/java"
+    ]))
 
     executionData.setFrom(fileTree(dir: buildDir, includes: [
         'jacoco/testDevDebugUnitTest.exec',
@@ -122,8 +201,77 @@ task jacocoUITestReport(type: JacocoReport) {
     ]))
 }
 
+tasks.register('writeBuildFingerprint') {
+    group = "Coverage"
+    description = "Write multi-repo build fingerprint metadata"
+
+    def outputFile = layout.buildDirectory.file("coverage-metadata/build-fingerprint.json")
+    inputs.property("buildFingerprintJson", buildFingerprintJson)
+    outputs.file(outputFile)
+
+    doLast {
+        def file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.text = JsonOutput.prettyPrint(buildFingerprintJson) + System.lineSeparator()
+    }
+}
+
+tasks.register('writeClassfilesManifest') {
+    group = "Coverage"
+    description = "Write classfiles manifest for multi-repo coverage builds"
+
+    def outputFile = layout.buildDirectory.file("coverage-metadata/classfiles-manifest.json")
+    inputs.property("buildFingerprintJson", buildFingerprintJson)
+    outputs.file(outputFile)
+
+    doLast {
+        def manifest = [
+            schemaVersion: 1,
+            entries: [
+                [
+                    module: "app",
+                    repositoryUrl: buildFingerprint.shell.repositoryUrl,
+                    commitHash: buildFingerprint.shell.commitHash,
+                    classRoot: "app/classes",
+                    sourceRoots: ["app/src/main/java"]
+                ],
+                [
+                    module: "common-utils",
+                    repositoryUrl: buildFingerprint.components[0].repositoryUrl,
+                    commitHash: buildFingerprint.components[0].commitHash,
+                    classRoot: "components/common-utils/classes",
+                    sourceRoots: ["src/main/java"]
+                ]
+            ]
+        ]
+        def file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.text = JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + System.lineSeparator()
+    }
+}
+
+tasks.register('packageMultiRepoClassfiles', Zip) {
+    group = "Coverage"
+    description = "Package app and component class files for the coverage platform"
+    dependsOn 'assembleDevDebug', 'writeClassfilesManifest'
+
+    archiveFileName = "classfiles.zip"
+    destinationDirectory = layout.buildDirectory.dir("coverage-metadata")
+
+    from(layout.buildDirectory.file("coverage-metadata/classfiles-manifest.json")) {
+        rename { "manifest.json" }
+    }
+    from("${buildDir}/intermediates/javac/devDebug/compileDevDebugJavaWithJavac/classes") {
+        into "app/classes"
+    }
+    from("${rootProject.projectDir}/../mycloudmusic-common-utils/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
+        into "components/common-utils/classes"
+    }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.mycloudmusic:common-utils:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'

@@ -16,4 +16,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'MyCloudMusicAndroidJava'
+includeBuild('../mycloudmusic-common-utils') {
+    dependencySubstitution {
+        substitute module('com.mycloudmusic:common-utils') using project(':')
+    }
+}
 include ':app'
