@@ -86,27 +86,26 @@ public class CoverageUploader {
     }
 
     /**
-     * 用 (projectId, commitHash) 换 buildId，换到之后由调用方缓存。
+     * 用 (projectId, buildKey) 换 buildId，换到之后由调用方缓存。
+     *
+     * ⚠️ 平台的 GET /api/builds/resolve 查询参数名固定叫 commitHash（兼容老 SDK，不代表语义
+     * 只接受真实 commit），实际匹配的是 Build.buildKey——多仓库构建场景下传 buildIdentityHash
+     * 的值，单仓库场景传真实 commitHash 的值，都用同一个参数名 commitHash 传，不能传成
+     * buildIdentityHash 这个参数名，平台不认，会直接 400。
      */
     private void resolveBuildId(ResolveCallback callback) {
         String url;
         try {
-            if (buildIdentityHash != null && !buildIdentityHash.isEmpty()) {
-                url = serverUrl + "/api/builds/resolve"
-                        + "?projectId=" + URLEncoder.encode(projectId, StandardCharsets.UTF_8.name())
-                        + "&buildIdentityHash=" + URLEncoder.encode(buildIdentityHash, StandardCharsets.UTF_8.name());
-            } else {
-                url = commitHashResolveUrl();
-            }
+            url = commitHashResolveUrl();
         } catch (Exception e) {
             callback.onResolved(null);
             return;
         }
 
-        resolveBuildIdWithUrl(url, true, callback);
+        resolveBuildIdWithUrl(url, callback);
     }
 
-    private void resolveBuildIdWithUrl(String url, boolean allowCommitFallback, ResolveCallback callback) {
+    private void resolveBuildIdWithUrl(String url, ResolveCallback callback) {
         Request request = new Request.Builder().url(url).get().build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -119,10 +118,6 @@ public class CoverageUploader {
             public void onResponse(Call call, Response response) {
                 try {
                     if (!response.isSuccessful() || response.body() == null) {
-                        if (allowCommitFallback && buildIdentityHash != null && !buildIdentityHash.isEmpty()) {
-                            resolveBuildIdByCommitHash(callback);
-                            return;
-                        }
                         callback.onResolved(null);
                         return;
                     }
@@ -140,22 +135,16 @@ public class CoverageUploader {
         });
     }
 
-    private void resolveBuildIdByCommitHash(ResolveCallback callback) {
-        if (commitHash == null || commitHash.isEmpty()) {
-            callback.onResolved(null);
-            return;
-        }
-        try {
-            resolveBuildIdWithUrl(commitHashResolveUrl(), false, callback);
-        } catch (Exception e) {
-            callback.onResolved(null);
-        }
-    }
-
+    // 多仓库构建场景下 buildIdentityHash 才是真正的构建身份键，优先用它；
+    // 没有的话（旧的单仓库构建）退化成真实 commitHash——两种情况都用同一个 commitHash
+    // 查询参数名传给平台（平台那边参数名是历史遗留，实际匹配的是 buildKey，见上面的注释）
     private String commitHashResolveUrl() throws Exception {
+        String buildKeyValue = (buildIdentityHash != null && !buildIdentityHash.isEmpty())
+                ? buildIdentityHash
+                : commitHash;
         return serverUrl + "/api/builds/resolve"
                 + "?projectId=" + URLEncoder.encode(projectId, StandardCharsets.UTF_8.name())
-                + "&commitHash=" + URLEncoder.encode(commitHash, StandardCharsets.UTF_8.name());
+                + "&commitHash=" + URLEncoder.encode(buildKeyValue, StandardCharsets.UTF_8.name());
     }
 
     private void doUpload(File coverageFile, String buildId) {

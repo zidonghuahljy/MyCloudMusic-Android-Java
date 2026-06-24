@@ -10,6 +10,7 @@ import com.ixuea.courses.mymusic.domain.Session;
 import com.ixuea.courses.mymusic.domain.event.LoginSuccessEvent;
 import com.ixuea.courses.mymusic.util.PreferenceUtil;
 import com.ixuea.courses.mymusic.util.ToastUtil;
+import com.ixuea.courses.mymusic.util.StringUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -38,6 +39,10 @@ public class AppContent extends MultiDexApplication {
                     "http://10.0.2.2:3001",
                     "6a390d5dd0f12e7a31a4c9a3"   // projectId（平台上创建项目后拿到的，长期不变）
             );
+
+            // 验证多仓库组件（common-utils）的增量覆盖率：只传 30，只命中 durationLabel
+            // 的 "short" 分支，"medium"/"long" 故意不覆盖
+            android.util.Log.d("AppContent", "duration label: " + StringUtil.durationLabel(30));
         }
 
         //初始化Stetho抓包
