@@ -1,5 +1,6 @@
 package com.ixuea.courses.mymusic.coverage;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.io.File;
@@ -137,6 +138,7 @@ public class CoverageUploader {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", coverageFile.getName(), fileBody)
+                .addFormDataPart("deviceInfo", buildDeviceInfo())
                 .build();
 
         Request request = new Request.Builder()
@@ -156,5 +158,23 @@ public class CoverageUploader {
                 response.close();
             }
         });
+    }
+
+    private String buildDeviceInfo() {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("manufacturer", Build.MANUFACTURER);
+            json.put("brand", Build.BRAND);
+            json.put("model", Build.MODEL);
+            json.put("device", Build.DEVICE);
+            json.put("product", Build.PRODUCT);
+            json.put("sdkInt", Build.VERSION.SDK_INT);
+            json.put("release", Build.VERSION.RELEASE);
+            json.put("supportedAbis", new org.json.JSONArray(Build.SUPPORTED_ABIS));
+            return json.toString();
+        } catch (Exception e) {
+            Log.d(TAG, "Build deviceInfo failed: " + e.getMessage());
+            return "{}";
+        }
     }
 }
